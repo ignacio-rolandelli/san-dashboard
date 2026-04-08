@@ -109,7 +109,6 @@
 <div class="footer">
     Globant Proprietary | Confidential Information - Auto-generated via Google Sheets
 </div>
-
 <script>
     const googleSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrt14hxpYARG6IuRK60hLv3_td-nIK4Whp1raWEpDQxL_2pMm033GsMu3Cz1sSxk_NgXSNEEuuayx6/pub?gid=0&single=true&output=csv';
     
@@ -133,18 +132,23 @@
 
     async function loadData() {
         try {
-            console.log("Intentando conectar con Google Sheets...");
+            document.getElementById('loader').innerHTML = 'Conectando con Google Sheets a través de proxy... ⏳';
+            
             const response = await fetch(sheetUrl);
             
-            // Si la respuesta de red no es OK, lo detectamos aquí
             if (!response.ok) {
                 throw new Error(`Error de red: ${response.status} ${response.statusText}`);
             }
 
             const csvText = await response.text();
+            
+            // Verificamos si Google nos devolvió una página de login en vez de datos
+            if (csvText.includes('<!DOCTYPE html>') || csvText.includes('google.com/a/')) {
+                throw new Error("Google está pidiendo inicio de sesión. Revisa la Solución 1.");
+            }
+
             const data = csvToArray(csvText);
             
-            // Omitimos encabezados y filtramos filas que estén completamente vacías
             const rows = data.slice(1).filter(row => row.length > 1 && row[0] !== undefined && row[0].trim() !== '');
             
             const boardContainer = document.getElementById('board-container');
@@ -155,9 +159,8 @@
 
             rows.forEach((row, index) => {
                 try {
-                    // EXTRACCIÓN SEGURA: Si la celda está vacía, usamos un valor por defecto (|| '')
                     const titulo = row[0] || 'Iniciativa sin título';
-                    const estadoRaw = row[1] || 'preventa'; // Si no hay estado, asumimos preventa
+                    const estadoRaw = row[1] || 'preventa'; 
                     const estado = estadoRaw.toLowerCase().trim();
                     const descripcion = row[2] || 'Sin descripción';
                     const badgeText = row[3] || estado;
@@ -203,18 +206,21 @@
                     `;
                     boardContainer.innerHTML += cardHTML;
                 } catch (rowError) {
-                    console.error(`Error procesando la fila ${index + 2}:`, rowError, row);
+                    console.error(`Error procesando la fila ${index + 2}:`, rowError);
                 }
             });
 
         } catch (error) {
-            console.error('Error crítico cargando los datos:', error);
-            // Mensaje de error más detallado en la pantalla
+            console.error('Error cargando los datos:', error);
+            let mensajeError = "No pudimos leer el Google Sheet debido a restricciones de seguridad corporativas.";
+            if(error.message.includes("inicio de sesión")) {
+                mensajeError = "Google Workspace está bloqueando el acceso. Debes desmarcar la opción 'Restringir acceso a usuarios de la empresa' en la configuración de Publicar en la Web de tu Google Sheet.";
+            }
+            
             document.getElementById('loader').innerHTML = `
-                <div style="color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; border: 1px solid #ffcdd2;">
-                    <strong>⚠️ Error de conexión</strong><br>
-                    No pudimos leer el Google Sheet. <br><br>
-                    <em>Si estás en la red de la empresa, es posible que el firewall esté bloqueando la conexión. Presiona <strong>F12</strong> y mira la pestaña "Console" para ver el error exacto.</em>
+                <div style="color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; border: 1px solid #ffcdd2; max-width: 800px; margin: auto;">
+                    <strong>⚠️ Acceso Denegado por Google</strong><br><br>
+                    ${mensajeError}
                 </div>`;
         }
     }
