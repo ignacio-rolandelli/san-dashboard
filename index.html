@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Globant Dashboard - SanCor Salud Account Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --globant-green: #c5ff00;
+            --globant-dark: #1a1a1a;
+            --globant-grey: #f4f5f7;
+            --text-main: #333;
+            --text-light: #666;
+            
+            /* Status Colors */
+            --status-enviada: #ff9800;
+            --status-aprobada: #4caf50;
+            --status-rfp: #f44336;
+            --status-preventa: #2196f3;
+            --status-integrado: #9c27b0; 
+            --status-hub: #00bcd4;     
+            --status-coe: #ff5722;
+        }
+        
+        body { font-family: 'Heebo', sans-serif; background-color: var(--globant-grey); color: var(--text-main); margin: 0; padding: 0; }
+        
+        /* HEADER */
+        .header { background-color: var(--globant-dark); color: white; padding: 30px 50px; border-bottom: 6px solid var(--globant-green); display: flex; justify-content: space-between; align-items: center; }
+        .header-title h1 { margin: 0; font-weight: 900; font-size: 2.2em; }
+        .header-title p { margin: 5px 0 0 0; color: #aaa; font-weight: 300; }
+        .header-meta { text-align: right; }
+        .tag-role { background: var(--globant-green); color: var(--globant-dark); padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; display: inline-block; margin-bottom: 5px; }
+
+        .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
+        .section-title { font-size: 1.8em; color: var(--globant-dark); border-bottom: 2px solid #ddd; padding-bottom: 10px; margin: 40px 0 20px 0; border-left: 5px solid var(--globant-green); padding-left: 15px;}
+        
+        /* LOADER */
+        #loader { text-align: center; padding: 50px; font-size: 1.2em; color: var(--text-light); }
+
+        /* KANBAN BOARD STYLE */
+        .board { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        
+        /* CARDS */
+        .card { background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); padding: 25px; position: relative; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; }
+        
+        /* Status Modifiers */
+        .status-enviada::before { background-color: var(--status-enviada); }
+        .status-aprobada::before { background-color: var(--status-aprobada); }
+        .status-rfp::before { background-color: var(--status-rfp); }
+        .status-preventa::before { background-color: var(--status-preventa); }
+        .status-integrado::before { background-color: var(--status-integrado); }
+        .status-hub::before { background-color: var(--status-hub); }
+        .status-coe::before { background-color: var(--status-coe); }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; gap: 10px;}
+        .card-title { margin: 0; font-size: 1.25em; font-weight: 700; color: var(--globant-dark); line-height: 1.2;}
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; text-transform: uppercase; white-space: nowrap;}
+        
+        .badge-enviada { background: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+        .badge-aprobada { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .badge-rfp { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        .badge-preventa { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
+        .badge-integrado { background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; }
+        .badge-hub { background: #e0f7fa; color: #00838f; border: 1px solid #b2ebf2; }
+        .badge-coe { background: #fbe9e7; color: #d84315; border: 1px solid #ffccbc; }
+
+        .card-desc { font-size: 0.9em; color: #555; margin-bottom: 15px; flex-grow: 1; }
+
+        .card-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; font-size: 0.85em; background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #eee;}
+        .meta-item { display: flex; flex-direction: column; }
+        .meta-label { color: var(--text-light); font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .meta-value { font-weight: bold; color: var(--text-main); }
+        
+        .owner-row { display: flex; justify-content: flex-start; align-items: center; gap: 15px; border-top: 1px solid #eee; padding-top: 12px; margin-top: auto; }
+        .owner-info { display: flex; align-items: center; gap: 8px; }
+        .owner-avatar { width: 28px; height: 28px; background: var(--globant-dark); color: var(--globant-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75em; }
+        .owner-details { display: flex; flex-direction: column; line-height: 1.1;}
+        .owner-name { font-size: 0.85em; font-weight: bold; }
+        .owner-role { font-size: 0.75em; color: var(--text-light); }
+
+        .footer { text-align: center; padding: 30px; color: var(--text-light); font-size: 0.85em; border-top: 1px solid #ddd; margin-top: 40px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-title">
+        <h1>SanCor Salud - Account Status</h1>
+        <p>Visión Ejecutiva Dinámica</p>
+    </div>
+    <div class="header-meta">
+        <span class="tag-role">TD View</span>
+        <div id="lastUpdate" style="color: #aaa; font-size: 0.9em; margin-top: 8px;">Cargando datos...</div>
+    </div>
+</div>
+
+<div class="container">
+    <h2 class="section-title">Iniciativas & Propuestas Activas</h2>
+    
+    <div id="loader">Conectando con Google Sheets... ⏳</div>
+    
+    <div class="board" id="board-container">
+        </div>
+</div>
+
+<div class="footer">
+    Globant Proprietary | Confidential Information - Auto-generated via Google Sheets
+</div>
+
+<script>
+    const googleSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrt14hxpYARG6IuRK60hLv3_td-nIK4Whp1raWEpDQxL_2pMm033GsMu3Cz1sSxk_NgXSNEEuuayx6/pub?gid=0&single=true&output=csv';
+    
+    const sheetUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(googleSheetUrl)}`;
+
+    function csvToArray(text) {
+        let p = '', row = [''], ret = [row], i = 0, r = 0, s = !0, l;
+        for (let l of text) {
+            if ('"' === l) {
+                if (s && l === p) row[i] += l;
+                s = !s;
+            } else if (',' === l && s) l = row[++i] = '';
+            else if ('\n' === l && s) {
+                if ('\r' === p) row[i] = row[i].slice(0, -1);
+                row = ret[++r] = [l = '']; i = 0;
+            } else row[i] += l;
+            p = l;
+        }
+        return ret;
+    }
+
+    async function loadData() {
+        try {
+            console.log("Intentando conectar con Google Sheets...");
+            const response = await fetch(sheetUrl);
+            
+            // Si la respuesta de red no es OK, lo detectamos aquí
+            if (!response.ok) {
+                throw new Error(`Error de red: ${response.status} ${response.statusText}`);
+            }
+
+            const csvText = await response.text();
+            const data = csvToArray(csvText);
+            
+            // Omitimos encabezados y filtramos filas que estén completamente vacías
+            const rows = data.slice(1).filter(row => row.length > 1 && row[0] !== undefined && row[0].trim() !== '');
+            
+            const boardContainer = document.getElementById('board-container');
+            document.getElementById('loader').style.display = 'none'; 
+            
+            const today = new Date();
+            document.getElementById('lastUpdate').innerText = `Actualizado: ${today.toLocaleDateString()}`;
+
+            rows.forEach((row, index) => {
+                try {
+                    // EXTRACCIÓN SEGURA: Si la celda está vacía, usamos un valor por defecto (|| '')
+                    const titulo = row[0] || 'Iniciativa sin título';
+                    const estadoRaw = row[1] || 'preventa'; // Si no hay estado, asumimos preventa
+                    const estado = estadoRaw.toLowerCase().trim();
+                    const descripcion = row[2] || 'Sin descripción';
+                    const badgeText = row[3] || estado;
+                    const meta1Label = row[4] || '-';
+                    const meta1Value = row[5] || '-';
+                    const meta2Label = row[6] || '-';
+                    const meta2Value = row[7] || '-';
+                    const ownerInitials = row[8] || 'TD';
+                    const ownerName = row[9] || 'Sin Asignar';
+                    const ownerRole = row[10] || '-';
+
+                    const safeEstado = ['enviada', 'aprobada', 'rfp', 'preventa', 'integrado', 'hub', 'coe'].includes(estado) ? estado : 'preventa';
+
+                    const cardHTML = `
+                        <div class="card status-${safeEstado}">
+                            <div class="card-header">
+                                <h3 class="card-title">${titulo}</h3>
+                                <span class="badge badge-${safeEstado}">${badgeText}</span>
+                            </div>
+                            <p class="card-desc">${descripcion}</p>
+                            
+                            <div class="card-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label">${meta1Label}</span>
+                                    <span class="meta-value">${meta1Value}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">${meta2Label}</span>
+                                    <span class="meta-value">${meta2Value}</span>
+                                </div>
+                            </div>
+
+                            <div class="owner-row">
+                                <div class="owner-info">
+                                    <div class="owner-avatar">${ownerInitials}</div>
+                                    <div class="owner-details">
+                                        <span class="owner-name">${ownerName}</span>
+                                        <span class="owner-role">${ownerRole}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    boardContainer.innerHTML += cardHTML;
+                } catch (rowError) {
+                    console.error(`Error procesando la fila ${index + 2}:`, rowError, row);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error crítico cargando los datos:', error);
+            // Mensaje de error más detallado en la pantalla
+            document.getElementById('loader').innerHTML = `
+                <div style="color: #d32f2f; background: #ffebee; padding: 20px; border-radius: 8px; border: 1px solid #ffcdd2;">
+                    <strong>⚠️ Error de conexión</strong><br>
+                    No pudimos leer el Google Sheet. <br><br>
+                    <em>Si estás en la red de la empresa, es posible que el firewall esté bloqueando la conexión. Presiona <strong>F12</strong> y mira la pestaña "Console" para ver el error exacto.</em>
+                </div>`;
+        }
+    }
+
+    window.onload = loadData;
+</script>
+</body>
+</html>
